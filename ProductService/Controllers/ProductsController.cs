@@ -1,4 +1,5 @@
-﻿using ProductService.Models;
+﻿using ProductService.common;
+using ProductService.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -126,6 +127,42 @@ namespace ProductService.Controllers
             }
 
             db.Products.Remove(product);
+            await db.SaveChangesAsync();
+            return StatusCode(HttpStatusCode.NoContent);
+        }
+
+        public SingleResult<Supplier> GetSupplier([FromODataUri] int key)
+        {
+            var result = db.Products.Where(p => p.Id == key).Select(p => p.Supplier);
+            return SingleResult.Create(result);
+        }
+
+        [AcceptVerbs("POST", "PUT")]
+        public async Task<IHttpActionResult> CreateRef([FromODataUri] int key, string navigationProperty, [FromBody] Uri link)
+        {
+            var product = await db.Products.SingleOrDefaultAsync(p => p.Id == key);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            switch (navigationProperty)
+            {
+                case "Supplier":
+                    var relatedKey = Helper.GetKeyFromUri<int>(Request, link);
+                    var supplier = await db.Suppliers.SingleOrDefaultAsync(s => s.Id == relatedKey);
+
+                    if (supplier == null)
+                    {
+                        return NotFound();
+                    }
+
+                    product.Supplier = supplier;
+                    break;
+
+                default:
+                    return StatusCode(HttpStatusCode.NotImplemented);
+            }
+
             await db.SaveChangesAsync();
             return StatusCode(HttpStatusCode.NoContent);
         }
