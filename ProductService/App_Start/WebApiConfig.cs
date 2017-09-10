@@ -14,6 +14,20 @@ namespace ProductService
         {
             ODataModelBuilder builder = new ODataConventionModelBuilder();
             builder.EntitySet<Product>("Products");
+
+            builder.Namespace = "ProductService";
+            builder.EntityType<Product>()
+                .Action("Rate")
+                .Parameter<int>("Rating");
+
+            builder.EntityType<Product>().Collection
+                .Function("MostExpensive")
+                .Returns<double>();
+
+            builder.Function("GetSalesTaxRate")
+                .Returns<double>()
+                .Parameter<int>("PostalCode");
+            
             builder.EntitySet<Supplier>("Supplier");
             config.MapODataServiceRoute(
                 routeName: "ODataRoute",
